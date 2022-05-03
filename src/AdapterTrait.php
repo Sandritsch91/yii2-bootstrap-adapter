@@ -24,6 +24,66 @@ trait AdapterTrait
     private $_instance;
 
     /**
+     * Overwrite magic method __callStatic
+     * @param $name
+     * @param $params
+     * @return Widget|ActiveForm|Html|string|void
+     * @throws InvalidConfigException
+     * @throws \ReflectionException
+     */
+    public static function __callStatic($name, $params)
+    {
+        $_this = \Yii::createObject(static::class);
+
+        // Get bs Version
+        if (($name == 'begin' || $name == 'widget') && isset($params[0])) {
+            $bsVersion = $_this->getBsVersion($params[0]);
+        } elseif ($name == 'end') {
+            $bsVersion = static::$_bsVersion;
+        } else {
+            $bsVersion = $_this->getBsVersion();
+            // search for bsVersion in last parameter, if array.
+            if (is_array($params[count($params) - 1])) {
+                if (isset($params[count($params) - 1]['bsVersion'])) {
+                    $bsVersion = $params[count($params) - 1]['bsVersion'];
+                    unset($params[count($params) - 1]['bsVersion']);
+                }
+
+            }
+        }
+
+        // Create full qualified class name with major bs version
+        $majorBsVersion = $_this->getMajorBsVersion($bsVersion);
+        /** @var \yii\bootstrap4\Html|\yii\bootstrap5\Html $fq */
+        $fq = $_this->getClass($majorBsVersion);
+
+        if (!method_exists($fq, $name)) {
+            return;
+        }
+
+        // Remove options not in public functions
+        if (($name == 'begin' || $name == 'widget') && isset($params[0])) {
+            $params[0] = $_this->sanitizeConfig($fq, $params[0]);
+        }
+
+        // Call method with params and return either string or object
+        $ret = call_user_func_array([$fq, $name], $params);
+
+        if ($name == 'begin') {
+            static::$_bsVersion = $majorBsVersion;
+            $_this->_instance = $ret;
+        }
+        if ($name == 'end') {
+            $_this->_instance = $ret;
+        }
+
+        if ($name == 'begin' || $name == 'end') {
+            return $_this;
+        }
+        return $ret;
+    }
+
+    /**
      * Overwrite magic method __call
      * @param $name
      * @param $params
@@ -81,7 +141,7 @@ trait AdapterTrait
      * @param $config
      * @return int|mixed|null
      */
-    protected function getBsVersion(&$config)
+    protected function getBsVersion(&$config = [])
     {
         $fallback = 5;
         if (ArrayHelper::keyExists('bsVersion', $config)) {
@@ -125,11 +185,11 @@ trait AdapterTrait
     /**
      * Removes properties not defined by the class to instantiate
      * @param $fq
-     * @param $config
+     * @param $options
      * @return array
      * @throws \ReflectionException
      */
-    protected function sanitizeConfig($fq, $config)
+    protected function sanitizeConfig($fq, $options)
     {
         $r = new \ReflectionClass($fq);
         if (array_key_exists($fq, $this->arrAvailable)) {
@@ -139,12 +199,12 @@ trait AdapterTrait
             $this->arrAvailable[$fq] = $available;
         }
 
-        foreach($config as $key => $value) {
+        foreach($options as $key => $value) {
             if (!in_array($key, $available)){
-                ArrayHelper::remove($config, $key);
+                ArrayHelper::remove($options, $key);
             }
         }
 
-        return $config;
+        return $options;
     }
 }
