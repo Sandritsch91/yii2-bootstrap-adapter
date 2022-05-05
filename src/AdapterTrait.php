@@ -8,6 +8,7 @@ namespace sandritsch91\yii2\bootstrapAdapter;
 
 use yii\base\InvalidConfigException;
 use yii\helpers\ArrayHelper;
+use yii\helpers\StringHelper;
 
 trait AdapterTrait
 {
@@ -141,7 +142,7 @@ trait AdapterTrait
      * @param $config
      * @return int|mixed|null
      */
-    protected function getBsVersion(&$config = [])
+    public function getBsVersion(&$config = [])
     {
         $fallback = 5;
         if (ArrayHelper::keyExists('bsVersion', $config)) {
@@ -158,7 +159,7 @@ trait AdapterTrait
      * Get major bs version. E.g 3, 4 or 5
      * @return int
      */
-    protected function getMajorBsVersion($str)
+    public function getMajorBsVersion($str)
     {
         $version = substr($str, 0, 1);
         return (int)$version;
@@ -174,7 +175,7 @@ trait AdapterTrait
     {
         // Get bootstrap version and create fq of target framework
         $versionSuffix = $this->bsVersions[$bsVersion];
-        $class = basename(static::class);
+        $class = StringHelper::basename(static::class);
         $fq = "yii\\bootstrap$versionSuffix\\$class";
         if (!class_exists($fq)) {
             throw new InvalidConfigException('Class ' . $fq . ' does not exist!');
@@ -200,6 +201,7 @@ trait AdapterTrait
         }
 
         foreach($options as $key => $value) {
+            if ($key == 'id') continue;
             if (!in_array($key, $available)){
                 ArrayHelper::remove($options, $key);
             }

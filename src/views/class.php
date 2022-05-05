@@ -10,6 +10,7 @@
 /** @var $description string */
 /** @var $className string */
 /** @var $extends string */
+/** @var $constants ReflectionClassConstant[] */
 /** @var $properties array */
 /** @var $methods array */
 /** @var $module Module */
@@ -68,6 +69,11 @@ if ($method['returnType']) {
 <?= " *\n * " . $separator . $arrDescription[1] . "\n" ?>
 class <?= $className ?> extends <?= $extends . "\n" ?>
 {
+<?php foreach ($constants as $constant) : ?>
+    <?= $constant->getDocComment() . "\n" ?>
+    const <?= $constant->name ?><?= $module::printDefault($constant->getValue()) ?>;
+
+<?php endforeach ?>
 <?php foreach ($properties as $name => $property) : ?>
     <?= $property['description'] . "\n" ?>
     public $<?= $name ?><?=$module::printDefault($property['default'])?>;

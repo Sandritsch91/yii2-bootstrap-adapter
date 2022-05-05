@@ -57,19 +57,19 @@ class GeneratorController extends Controller
      */
     public function actionAdapterClasses($versions = ['', '4', '5'])
     {
-        if (file_exists($this->tmpDir)) {
-            FileHelper::removeDirectory($this->tmpDir);
-        }
-        if (!FileHelper::createDirectory($this->tmpDir)) {
-            throw new InvalidConfigException('Directory ' . $this->tmpDir . ' could not be created.');
-        }
-        if (!is_writable($this->tmpDir)) {
-            throw new InvalidConfigException('Directory ' . $this->tmpDir . ' is not writable.');
-        }
-
-        foreach ($versions as $version) {
-            exec('git clone https://github.com/yiisoft/yii2-bootstrap' . $version . ' ' . $this->tmpDir . '/yii2-bootstrap' . $version);
-        }
+//        if (file_exists($this->tmpDir)) {
+//            FileHelper::removeDirectory($this->tmpDir);
+//        }
+//        if (!FileHelper::createDirectory($this->tmpDir)) {
+//            throw new InvalidConfigException('Directory ' . $this->tmpDir . ' could not be created.');
+//        }
+//        if (!is_writable($this->tmpDir)) {
+//            throw new InvalidConfigException('Directory ' . $this->tmpDir . ' is not writable.');
+//        }
+//
+//        foreach ($versions as $version) {
+//            exec('git clone https://github.com/yiisoft/yii2-bootstrap' . $version . ' ' . $this->tmpDir . '/yii2-bootstrap' . $version);
+//        }
 
         $classes = [
             'Accordion',
@@ -158,6 +158,11 @@ class GeneratorController extends Controller
                         'parameters' => $method->getParameters()
                     ];
                 }
+
+                // Add constants
+                foreach ($r->getReflectionConstants() as $constant) {
+                    $infos[$class]['constants'][$constant->name] = $constant;
+                }
             }
         }
 
@@ -173,6 +178,7 @@ class GeneratorController extends Controller
                 ),
                 'className' => $class,
                 'extends' => $attributes['extends'],
+                'constants' => $attributes['constants'],
                 'properties' => $attributes['properties'],
                 'methods' => $attributes['methods'],
                 'module' => $this->module,
